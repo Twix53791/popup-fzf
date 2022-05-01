@@ -1,5 +1,5 @@
 #!/bin/bash
-# MADE BY twix
+# MADE BY twix (https://github.com/Twix53791/popup-fzf/)
 #:::::::::::::::::::::::::::::::::::::::::::::::::::
 # Pipe to a (drop) terminal
 # Run this script from a terminal:
@@ -59,13 +59,14 @@ _background_check (){
 	done
 }
 
+# Rules according to the command run
 _app_rules (){
 	if [[ $1 == *fzf* ]]; then
-		xdo resize -w 1200 -h 700 $drop_window
-		xdo move -x 360 -y 190 $drop_window
-	else
 		xdo resize -w 1536 -h 864 $drop_window
 		xdo move -x 192 -y 108 $drop_window
+	else
+		xdo resize -w 1200 -h 700 $drop_window
+		xdo move -x 360 -y 190 $drop_window
 	fi
 }
 

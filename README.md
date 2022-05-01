@@ -39,3 +39,8 @@ _pipe
 
 [[ -n $@ ]] && echo "$@" > $pipe
 ```
+
+## Demo
+(using some of my other scripts...)
+
+![](https://github.com/Twix53791/popup-fzf/blob/main/dtpipe.gif)

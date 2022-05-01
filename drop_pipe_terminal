@@ -1,0 +1,108 @@
+#!/bin/bash
+# MADE BY twix
+#:::::::::::::::::::::::::::::::::::::::::::::::::::
+# Pipe to a (drop) terminal
+# Run this script from a terminal:
+#	kitty bash -c <thisscript>
+#	Then echo "command" > /tmp/dtpipe-<PPID> from
+#	another shell
+#	The command will run into the dtpipe terminal
+#	and rise its window if previously hidden
+#
+# DEPENDENCIES
+#		wmctrl
+#		xdo	OR 	bspwm
+#
+#:::::::::::::::::::::::::::::::::::::::::::::::::::
+
+# To be able to run functions only sourced by .bashrc
+source /home/archx/.bashrc
+
+pipe="/tmp/dtpipe-$PPID"
+
+# In bspwm, set this variable to 1, 0 instead
+BSPWM=1
+
+#:::: FUNCTIONS ::::::::::::::::::::::::::::::::::::
+
+_clear (){
+	rm -f $pipe
+}
+
+_init (){
+	drop_window=$(wmctrl -lp | grep -i $PPID | cut -d' ' -f1)
+
+	fd -I dtpipe /tmp | xargs -I file rm file
+	[[ ! -p $pipe ]] && mkfifo $pipe
+}
+
+# Hide the drop terminal if its window is not anymore focused
+#  or if the process inside it, here fzf, is exited.
+_background_check (){
+	sleep 0.5
+	while true; do
+		isfocused=$(bspc query -N -n $drop_window.focused)
+		exited=$(pgrep fzf)
+#		yourvariable=your_new_condition
+
+# Set here new conditions
+		if [[ -z $isfocused ]] || [[ -z $exited ]]; then
+			[[ $BSPWM == 0 ]] && xdo hide $drop_window ||
+				bspc node $drop_window -g hidden=on
+        
+			# fzf bug fix. Not closed properly without
+			[[ -n $(pgrep fzf) ]] && killall fzf
+      
+			return
+		fi
+ 	 sleep .1
+	done
+}
+
+_app_rules (){
+	if [[ $1 == *fzf* ]]; then
+		xdo resize -w 1200 -h 700 $drop_window
+		xdo move -x 360 -y 190 $drop_window
+	else
+		xdo resize -w 1536 -h 864 $drop_window
+		xdo move -x 192 -y 108 $drop_window
+	fi
+}
+
+#::: SCRIPT :::::::::::::::::::::::::::::::::::::::
+
+trap "_clear" EXIT
+
+sleep .3s
+_init
+
+# The following read triggers when something NEW is written in the pipe
+while true
+do
+		if read pipein <$pipe; then
+				_app_rules "$pipein"
+	    		[[ $BSPWM == 0 ]] && xdo show $drop_window &&
+	    									xdo active $drop_window ||
+	    					bspc node $drop_window -g hidden=off -f
+				tput reset
+				_background_check &
+				$pipein
+		fi
+done
+
+
+
+
+###########################################################
+## Another bug fix if not closed properly
+#In _background_check:
+				# fzf seems to not close itself properly
+#			echo "echo" > $pipe
+				# To close the drop_term. Send by ranger plugin_ipc.py for now
+#In while loop
+#			if [[ "$pipein" != "echo" ]]; then
+#				...
+#			else
+#				$pipein
+#				tput reset
+#			fi

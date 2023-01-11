@@ -6,6 +6,14 @@ Run this script from a terminal:
     `kitty bash -c <thisscript>`
 Then `echo "command" > /tmp/dtpipe-<PPID>` from another shell
 
+# Easy install
+
+- Copy dtpipe and dtpipe_send into /usr/local/bin (or ../bspwm/bin is you use bspwm, or any directory you then add to $PATH).
+- Run dtpipe from a script (see below) or from a terminal (ex: kitty -e dtpipe &)
+- Configure a rule in your window manager to run the drop terminal window hidden (see below)
+- Send commands to the drop terminal using dtpipe_send. Ex:
+    `dtpipe_send fzf -m --preview='head -10 {+}'`
+    
 # Setting a fzf popup menu
 - Create a script launching this script into a terminal, here named 'launcher_dtpipe.sh':
 

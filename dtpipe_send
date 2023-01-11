@@ -1,0 +1,13 @@
+!#/bin/bash
+
+# Get the name of the pipe (dtpipe+PID)
+_pipe(){
+   pipe=$(fd -I dtpipe /tmp)
+}
+
+_pipe
+
+# Run the pipe terminal if not running
+[[ -z $pipe ]] && dtpipe && sleep 1 && _pipe
+
+[[ -n $@ ]] && echo "$@" > $pipe

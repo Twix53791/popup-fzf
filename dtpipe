@@ -1,0 +1,122 @@
+#!/bin/bash
+# MADE BY twix (https://github.com/Twix53791/popup-fzf/)
+#:::::::::::::::::::::::::::::::::::::::::::::::::::
+# Pipe to a (drop/pop-up) terminal
+# Run this script from a terminal:
+#	kitty bash -c <thisscript>
+#	Then echo "command" > /tmp/dtpipe-<PPID> from
+#	another shell
+#	The command will run into the dtpipe terminal
+#	and rise its window if previously hidden
+#
+# DEPENDENCIES
+#		xdo
+#     bspwm (optionnal)
+#
+#:::::::::::::::::::::::::::::::::::::::::::::::::::
+
+# To be able to run functions only sourced by .bashrc
+source /home/archx/.bashrc
+
+pipe="/tmp/dtpipe-$PPID"
+
+# In bspwm, set this variable to 1, 0 instead
+BSPWM=1
+
+#:::: FUNCTIONS ::::::::::::::::::::::::::::::::::::
+
+# Get parent window, clear /tmp and create pipe
+_init (){
+   pppid=$(cut -d ' ' -f4 /proc/$PPID/stat)
+	ppid_window=$(xdo id -p $pppid)
+
+	find /tmp -maxdepth 1 \( -iname 'dtpipe*' \) 2>/dev/null |
+	   xargs -I file rm file
+	[[ ! -p $pipe ]] && mkfifo $pipe
+}
+
+_clear (){
+	rm $pipe
+}
+
+# Hide the drop terminal if its window is not anymore focused
+_background_check (){
+	sleep 0.5
+	while true; do
+
+		isfocused=$(bspc query -N -n $ppid_window.focused)
+
+   # yourvariable=your_new_condition
+
+   # Set here new conditions
+		if [[ -z $isfocused ]]; then
+
+         # Kill all child processes of dtpipe
+         kill $(ps -s $PPID -o pid= | tail -n +3) 2>/dev/null
+
+        	# fzf bug fix. Not closed properly without
+			#[[ -n $(pgrep fzf) ]] && killall fzf
+			return
+		fi
+ 	 sleep .1
+	done
+}
+
+# Rules according to the command run
+_app_rules (){
+	if [[ $1 == *fzf* ]]; then
+		xdo resize -w 1536 -h 864 $ppid_window
+		xdo move -x 192 -y 108 $ppid_window
+	else
+		xdo resize -w 1200 -h 700 $ppid_window
+		xdo move -x 360 -y 190 $ppid_window
+	fi
+}
+
+#::: SCRIPT :::::::::::::::::::::::::::::::::::::::
+
+trap "_clear" EXIT
+
+sleep .3s
+_init
+
+# The following read triggers when something NEW is written in the pipe
+while true
+do
+		if read pipein < $pipe; then
+				tput reset
+				_app_rules "$pipein"
+
+	    		if [[ $BSPWM == 0 ]]; then
+	    		   xdo show $ppid_window
+	    			xdo active $ppid_window
+	    	   else
+ 					bspc node $ppid_window -g hidden=off -f
+			   fi
+
+				_background_check &
+
+  				cmd=("$pipein")
+            eval "${cmd[@]}"
+
+            [[ $BSPWM == 0 ]] && xdo hide $ppid_window ||
+                              bspc node $ppid_window -g hidden=on
+		fi
+done
+
+
+
+
+###########################################################
+## Another bug fix if not closed properly
+#In _background_check:
+				# fzf seems to not close itself properly
+#			echo "echo" > $pipe
+				# To close the drop_term. Send by ranger plugin_ipc.py for now
+#In while loop
+#			if [[ "$pipein" != "echo" ]]; then
+#				...
+#			else
+#				$pipein
+#				tput reset
+#			fi

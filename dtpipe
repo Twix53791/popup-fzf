@@ -4,6 +4,9 @@
 # Pipe to a (drop/pop-up) terminal
 # Run this script from a terminal:
 #	kitty bash -c <thisscript>
+#  	OR
+#  	kitty -e dtpipe (dtpipe in /usr/local/bin or ../bspwm/bin)
+#
 #	Then echo "command" > /tmp/dtpipe-<PPID> from
 #	another shell
 #	The command will run into the dtpipe terminal
